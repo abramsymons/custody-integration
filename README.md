@@ -129,7 +129,9 @@ def get_withdraws(
 
 📄 See `main.py` for the full implementation of the routes that the application should serve and be queried by the custody service.
 
-### Run and Test the Server
+---
+
+## Run and Test the Server
 
 Install dependencies:
 
