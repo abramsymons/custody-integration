@@ -136,6 +136,7 @@ def get_withdraws(
 Install dependencies:
 
 ```bash
+uv venv
 uv pip install -r requirements.txt
 ```
 
