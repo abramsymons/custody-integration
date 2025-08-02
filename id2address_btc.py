@@ -1,6 +1,6 @@
 import hashlib
 
-from bitcoinutils.keys import P2trAddress, PublicKey
+from bitcoinutils.keys import PublicKey
 from bitcoinutils.utils import tweak_taproot_pubkey
 
 

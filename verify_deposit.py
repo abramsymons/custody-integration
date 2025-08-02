@@ -1,4 +1,4 @@
-from struct import calcsize, unpack
+from struct import unpack
 from typing import Any
 
 from eth_account.messages import encode_defunct

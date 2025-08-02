@@ -21,10 +21,6 @@ class Deposit(BaseModel):
     user_id: int
     vout: int
 
-    @property
-    def token_name(self):
-        return get_token_name(self.chain, self.token_contract)
-
 
 class DepositTransaction(BaseModel):
     version: int
