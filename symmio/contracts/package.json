@@ -1,10 +1,12 @@
 {
   "name": "hardhat-project",
   "dependencies": {
+    "dotenv": "^17.2.1",
     "hardhat": "^2.26.1"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
