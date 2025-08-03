@@ -18,7 +18,7 @@ class Deposit(BaseModel):
     amount: Decimal
     decimal: int
     time: int
-    user_id: int
+    salt: int
     vout: int
 
 
@@ -44,7 +44,7 @@ class DepositTransaction(BaseModel):
         deposits = []
 
         for chunk in raw_deposits:
-            tx_hash, token_contract, amount, decimal, t, user_id, vout = unpack(
+            tx_hash, token_contract, amount, decimal, t, salt, vout = unpack(
                 deposit_format, chunk[:deposit_size]
             )
             amount = int.from_bytes(amount, byteorder="big")
@@ -60,7 +60,7 @@ class DepositTransaction(BaseModel):
                     amount=amount,
                     decimal=decimal,
                     time=t,
-                    user_id=user_id,
+                    salt=salt,
                     vout=vout,
                 )
             )

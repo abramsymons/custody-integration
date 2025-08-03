@@ -10,51 +10,61 @@ Integrating with the Zellular custody service involves three core steps:
 
 ## 1. Generating Deposit Addresses
 
-Zellular uses deterministic address derivation, which allows your application to generate deposit addresses locally without querying the custody service. These addresses are unique per user and per chain.
+Zellular uses deterministic address derivation, allowing your application to generate deposit addresses locally without querying the custody service. These addresses are unique per user and per chain.
+
+The custody service queries the salts from your application and uses them to generate and monitor deposit addresses.
 
 ### Bitcoin Networks
 
 On Bitcoin, deposit addresses are derived from:
 - A shared **verifying public key** provided by the custody service
-- The user's **custody ID** (a sequential integer starting from `0`)
+- A **salt** — a unique integer per user defined by your app
 
 ### EVM-Compatible Chains
 
 On EVM-based chains, addresses are derived from:
 - The **factory contract address**
 - The **factory's bytecode hash**
-- The user's **custody ID**
+- The **salt** — a unique integer per user defined by your app
 
-### Custody User IDs
+### Get Last User ID
 
-The custody service assigns each user a **sequential integer ID**, starting at `0`. Your application must:
-
-- Maintain a mapping between your internal user IDs and custody user IDs
-- Use this mapping to resolve deposit events and credit users correctly
-
-When a deposit occurs, the custody service sends a deposit request that includes the custody-assigned user ID. Your application is responsible for linking this ID to the appropriate internal user.
-
-### Declare User Count for Monitoring
-
-To tell the custody service how many users to monitor deposit addresses for, your application must expose the following route:
+The custody service first queries this route to find out up to which user ID it should fetch salts:
 
 ```python
-@router.get("/users/latest-id")
+@router.get("/user/id/last")
 async def get_latest_user_id() -> dict[str, int]:
-    return {"id": NUMBER_OF_USERS}
+    return {"id": 10}
 ```
 
-- This route returns the **latest (highest) custody user ID** your app wants monitored.
-- The custody service will derive addresses and monitor chains for all users from `0` to `id`.
+- Returns the latest (highest) user ID to monitor.
+- The custody service will query salts from your app for all users from 0 to id.
+
+### Get Users Salts
+
+This route returns a paginated list of users with their assigned salts:
+
+```python
+class User(BaseModel):
+    salt: int
+    id: int
+
+@router.get("/users", response_model=list[User])
+def get_users(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+):
+    ...
+```
 
 ### Example Scripts
 
 Use the provided helper scripts to generate deposit addresses for testing or indexing:
 
-- `id2address_btc.py`: Generates Bitcoin deposit addresses for the first N users
-- `id2address_evm.py`: Generates EVM-compatible deposit addresses for the first N users
+- `id2address_btc.py`: Generates Bitcoin deposit addresses for a set of sample salts.
+- `id2address_evm.py`: Generates EVM-compatible deposit addresses for a set of sample salts.
 
-These can be used to precompute or validate user deposit addresses based on your mapping.
+These scripts can be used to precompute or validate user deposit addresses based on your application's salt mapping.
 
 ---
 
@@ -111,6 +121,15 @@ def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
 Returns a paginated list of unsigned withdrawal requests.
 
 ```python
+class Withdraw(BaseModel):
+    chain: str
+    tokenContract: str
+    amount: str
+    destination: str
+    salt: int
+    t: int
+    id: int
+
 @router.get("/withdraws", response_model=list[Withdraw])
 def get_withdraws(
     chain: str = Query(...),

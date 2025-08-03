@@ -21,6 +21,6 @@ def get_create2_address(
 factory_address = "0x06bcEa7a0cf5AA9A28cB3c6C8e799Ac4D44024e3"
 byte_code_hash = "0x2da6a0b42d3d9a39b48fa6b598ed1e3db10547faf2922de05a9953ef7de23de6"
 
-for user_id in range(100):
-    evm_address = get_create2_address(factory_address, user_id, byte_code_hash)
-    print(f"user id: {user_id}, evm address: {evm_address}")
+for salt in (1, 123456789, 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061):
+    evm_address = get_create2_address(factory_address, salt, byte_code_hash)
+    print(f"salt: {salt}, evm address: {evm_address}")

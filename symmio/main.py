@@ -38,9 +38,28 @@ def client(chain: str) -> AsyncWeb3:
     return AsyncWeb3(AsyncHTTPProvider(SUPPORTED_CHAINS[chain]["rpc"]))
 
 
-@router.get("/users/latest-id")
-async def get_latest_user_id() -> dict[str, int]:
+@router.get("/user/id/last")
+async def get_last_user_id() -> dict[str, int]:
     return {"id": NUMBER_OF_USERS}
+
+
+class User(BaseModel):
+    salt: int
+    id: int
+
+
+@router.get("/users", response_model=list[User])
+def get_users(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+):
+    return [
+        {
+            "salt": i + 1000, # This can be any uint256 num specified by the app
+            "id": i,
+        }
+        for i in range(offset, limit + offset)
+    ]
 
 
 @router.post("/deposit")
@@ -57,17 +76,21 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
             )
 
             tx = executor.functions.executeDeposit(deposit_tx)
-            gas_estimate = await tx.estimate_gas({'from': ACCOUNT_ADDRESS})
+            gas_estimate = await tx.estimate_gas({"from": ACCOUNT_ADDRESS})
             w3 = client(chain)
             gas_price = await w3.eth.gas_price
-            tx_dict = await tx.build_transaction({
-                "from": ACCOUNT_ADDRESS,
-                "nonce": await w3.eth.get_transaction_count(ACCOUNT_ADDRESS),
-                "gas": gas_estimate,
-                "gasPrice": gas_price * 3,
-            })
+            tx_dict = await tx.build_transaction(
+                {
+                    "from": ACCOUNT_ADDRESS,
+                    "nonce": await w3.eth.get_transaction_count(ACCOUNT_ADDRESS),
+                    "gas": gas_estimate,
+                    "gasPrice": gas_price * 3,
+                }
+            )
 
-            signed_tx = w3.eth.account.sign_transaction(tx_dict, private_key=PRIVATE_KEY)
+            signed_tx = w3.eth.account.sign_transaction(
+                tx_dict, private_key=PRIVATE_KEY
+            )
             tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
             print(f"Transaction sent: {tx_hash.hex()}")
@@ -103,7 +126,7 @@ class Withdraw(BaseModel):
     tokenContract: str
     amount: str
     destination: str
-    user_id: int
+    salt: int
     t: int
     id: int
 
@@ -139,10 +162,10 @@ async def get_withdraws(
             "tokenContract": withdrawal[1],
             "amount": str(withdrawal[2]),
             "destination": withdrawal[3],
-            "user_id": int(withdrawal[4], 16),
+            "salt": int(withdrawal[4], 16),
             "t": timestamp,
-            
-        } for withdrawal in withdrawals
+        }
+        for withdrawal in withdrawals
     ]
 
 

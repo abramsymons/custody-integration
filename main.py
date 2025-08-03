@@ -9,9 +9,28 @@ NUMBER_OF_USERS = 100
 router = APIRouter()
 
 
-@router.get("/users/latest-id")
-async def get_latest_user_id() -> dict[str, int]:
+@router.get("/user/id/last")
+async def get_last_user_id() -> dict[str, int]:
     return {"id": NUMBER_OF_USERS}
+
+
+class User(BaseModel):
+    salt: int
+    id: int
+
+
+@router.get("/users", response_model=list[User])
+def get_users(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+):
+    return [
+        {
+            "salt": i + 1000, # This can be any uint256 num specified by the app
+            "id": i,
+        }
+        for i in range(offset, limit + offset)
+    ]
 
 
 @router.post("/deposit")
@@ -39,7 +58,7 @@ class Withdraw(BaseModel):
     tokenContract: str
     amount: str
     destination: str
-    user_id: int
+    salt: int
     t: int
     id: int
 
@@ -50,13 +69,15 @@ def get_withdraws(
     offset: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
 ):
+    if chain != "SEP":
+        return []
     return [
         {
             "chain": chain,
             "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
-            "amount": "5000000",
+            "amount": "2000000",
             "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
-            "user_id": 22,
+            "salt": 1010,
             "t": 1753369254,
             "id": 0,
         }

@@ -4,8 +4,8 @@ from bitcoinutils.keys import PublicKey
 from bitcoinutils.utils import tweak_taproot_pubkey
 
 
-def get_taproot_address(master_public: PublicKey, user_id: int) -> str:
-    tweak_int = calculate_tweak(master_public, user_id)
+def get_taproot_address(master_public: PublicKey, salt: int) -> str:
+    tweak_int = calculate_tweak(master_public, salt)
     tweak_and_odd = tweak_taproot_pubkey(master_public.key.to_string(), tweak_int)
     pubkey = tweak_and_odd[0][:32]
     is_odd = tweak_and_odd[1]
@@ -17,10 +17,10 @@ def get_taproot_address(master_public: PublicKey, user_id: int) -> str:
     return taproot_address.to_string()
 
 
-def calculate_tweak(pubkey: PublicKey, user_id: int) -> int:
+def calculate_tweak(pubkey: PublicKey, salt: int) -> int:
     key_x = pubkey.to_bytes()[:32]
-    user_id_bytes = user_id.to_bytes(8, byteorder="big")
-    tweak = tagged_hash(key_x + user_id_bytes, "TapTweak")
+    salt_bytes = salt.to_bytes(32, byteorder="big")
+    tweak = tagged_hash(key_x + salt_bytes, "TapTweak")
     tweak_int = int.from_bytes(tweak, byteorder="big")
     return tweak_int
 
@@ -34,6 +34,6 @@ taproot_verifying_key = PublicKey(
     "03fba30c7f6d8560c86845c74e38f64b8c8dfb2f95c46333b11890185d069db91b"
 )
 
-for user_id in range(100):
-    taproot_address = get_taproot_address(taproot_verifying_key, user_id)
-    print(f"user id: {user_id}, btc address: {taproot_address}")
+for salt in (1, 123456789, 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061):
+    taproot_address = get_taproot_address(taproot_verifying_key, salt)
+    print(f"salt: {salt}, btc address: {taproot_address}")
