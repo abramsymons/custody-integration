@@ -8,7 +8,7 @@ contract DepositParser {
         uint256 amount;
         uint8 decimal;
         uint32 time;
-        uint64 userId;
+        address salt;
         uint8 vout;
     }
 
@@ -23,15 +23,12 @@ contract DepositParser {
         require(txData.length >= 7, "Invalid tx header");
 
         uint8 version = uint8(txData[0]);
-
         bytes1 operation = txData[1];
-
         string memory chain = string(abi.encodePacked(txData[2], txData[3], txData[4]));
-
         uint16 count = (uint16(uint8(txData[5])) << 8) | uint8(txData[6]);
 
         uint256 offset = 7;
-        uint256 depositSize = 98;
+        uint256 depositSize = 111;
         require(txData.length >= offset + count * depositSize, "Invalid deposit count or data");
 
         Deposit[] memory deposits = new Deposit[](count);
@@ -64,8 +61,11 @@ contract DepositParser {
         d.time = bytesToUint32(data[pos:pos + 4]);
         pos += 4;
 
-        d.userId = bytesToUint64(data[pos:pos + 8]);
-        pos += 8;
+        uint8 saltLen = uint8(data[pos]);
+        pos += 1;
+        require(saltLen == 20, "Invalid salt length");
+        d.salt = bytesToAddress(data[pos:pos + 20]);
+        pos += 20;
 
         d.vout = uint8(data[pos]);
     }
@@ -88,13 +88,6 @@ contract DepositParser {
         require(b.length == 4, "Invalid uint32 length");
         assembly {
             result := shr(224, calldataload(b.offset))
-        }
-    }
-
-    function bytesToUint64(bytes calldata b) internal pure returns (uint64 result) {
-        require(b.length == 8, "Invalid uint64 length");
-        assembly {
-            result := shr(192, calldataload(b.offset))
         }
     }
 }
