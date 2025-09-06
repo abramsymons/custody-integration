@@ -44,7 +44,7 @@ async def get_last_user_id() -> dict[str, int]:
 
 
 class User(BaseModel):
-    salt: int
+    salt: str
     id: int
 
 
@@ -55,7 +55,7 @@ def get_users(
 ):
     return [
         {
-            "salt": i + 1000, # This can be any uint256 num specified by the app
+            "salt": hex(i + 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061 + 1000), # This can be any hex str specified by the app
             "id": i,
         }
         for i in range(offset, limit + offset)
@@ -126,7 +126,7 @@ class Withdraw(BaseModel):
     tokenContract: str
     amount: str
     destination: str
-    salt: int
+    salt: str
     t: int
     id: int
 
@@ -162,7 +162,7 @@ async def get_withdraws(
             "tokenContract": withdrawal[1],
             "amount": str(withdrawal[2]),
             "destination": withdrawal[3],
-            "salt": int(withdrawal[4], 16),
+            "salt": withdrawal[4],
             "t": timestamp,
         }
         for withdrawal in withdrawals
