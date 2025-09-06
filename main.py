@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from parse_deposit import DepositTransaction
 from verify_deposit import verify_deposit_tx
+from id2address_apt import compute_apt_address
 
 NUMBER_OF_USERS = 100
 
@@ -92,6 +93,28 @@ def get_withdraws(
         }
     ]
 
+class AddressMapping(BaseModel):
+    apt: str
+    # in the future you could add: btc: str | None = None, sui: str | None = None, etc.
+
+class AddressesResponse(BaseModel):
+    addresses: dict[str, AddressMapping]
+
+@router.post("/deposit/addresses", response_model=AddressesResponse)
+def convert_eth_to_aptos(eth_addresses: list[str]):
+    if not eth_addresses:
+        raise HTTPException(status_code=400, detail="No Ethereum addresses provided.")
+
+    result: dict[str, AddressMapping] = {}
+
+    try:
+        for addr in eth_addresses:
+            apt_addr = compute_apt_address(addr)
+            result[addr] = AddressMapping(apt=apt_addr)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Conversion error: {e}")
+
+    return AddressesResponse(addresses=result)
 
 app = FastAPI()
 app.add_middleware(
