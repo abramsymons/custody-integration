@@ -2,6 +2,7 @@ import sys
 import os
 import json
 from fastapi import APIRouter, FastAPI, Query, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from web3 import AsyncHTTPProvider, AsyncWeb3
@@ -193,4 +194,11 @@ def convert_eth_to_aptos(eth_addresses: list[str]):
     return AddressesResponse(addresses=result)
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],          # allow all origins (dev only)
+    allow_credentials=False,      # must be False when allow_origins=["*"]
+    allow_methods=["*"],          # or ["GET","POST","PUT","DELETE","OPTIONS"]
+    allow_headers=["*"],          # or specific headers
+)
 app.include_router(router)
