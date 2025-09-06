@@ -2,7 +2,7 @@ from struct import unpack
 from typing import Any
 
 from eth_account.messages import encode_defunct
-from frost_lib.curves import secp256k1_evm, secp256k1_tr
+from frost_lib.curves import secp256k1_evm, secp256k1_tr, ed25519
 from pydantic import BaseModel
 from web3 import Web3
 
@@ -24,25 +24,33 @@ class VerifyingData(BaseModel):
     verifying_shares: dict[str, str]
     verifying_key: str
 
-
 KEYS = {
     "secp256k1_tr": VerifyingData(
         header={"version": 0, "ciphersuite": "FROST-secp256k1-SHA256-TR-v1"},
         verifying_shares={
-            "0000000000000000000000000000000000000000000000000000000000000001": "030345e6ef7403cb1ff17828d29c67580c7ce2d8240210e4ef354eece60dd72d51",
-            "0000000000000000000000000000000000000000000000000000000000000002": "03d0d3d8d7bca5dc70bd69f2ccd5790c0c76b56e859b232b86901bbc22f88a8de2",
-            "0000000000000000000000000000000000000000000000000000000000000003": "030f7c59900251eaaa126d3f0a7f0aff171a1da9164e5db21290bdc4da99f39f18"
+            "0000000000000000000000000000000000000000000000000000000000000001": "02759da1d09403158e43fb6427884f94d3d0f74bda020eb2c6323608a78eb357ee",
+            "0000000000000000000000000000000000000000000000000000000000000002": "02d88a09e81b662c86c52e474579497fc4f44e405ec369199514e670792057d599",
+            "0000000000000000000000000000000000000000000000000000000000000003": "03f2ef0088e6fc5d21ef18d4d212163cdce6525638123e004609b6feaf18981446"
         },
-        verifying_key="0234f60a2a259cdacdfe4c597254754e71e25e75ce90746041c1d99bb83377277f",
+        verifying_key="0367e79f1483c900ff4eb46cdf31f263c4b34be7594e52d4f2a84ef7328324c556",
     ),
     "secp256k1_evm": VerifyingData(
         header={"version": 0, "ciphersuite": "FROST-secp256k1-SHA256-v1"},
         verifying_shares={
-            "0000000000000000000000000000000000000000000000000000000000000001": "03528e5a8879b132aead053dc4c90c32fee2f20c9d2e68c540b2586819fcf088fd",
-            "0000000000000000000000000000000000000000000000000000000000000002": "02db508eecea73b7e2cd13c12a28750cca37c407d77fc943a3348d2ab20c421af8",
-            "0000000000000000000000000000000000000000000000000000000000000003": "02b79733a4a77c67ed878cd244c3d4c684b751a246c6e23ef729f3e87a6bcd71d6"
+            "0000000000000000000000000000000000000000000000000000000000000001": "02e2a72e964c746d72538a42a712b240ad680f0e8d1d240a4c68a7b054cfc1a085",
+            "0000000000000000000000000000000000000000000000000000000000000002": "023f3a1322b880be0f073d30a5df1b0edc9518e64762320534c1e51bb743470876",
+            "0000000000000000000000000000000000000000000000000000000000000003": "03a4b318d6605669cf5bd297dfe2d6dc86ac42180db6dd161a6568b17fc6e4542d"
         },
-        verifying_key="0310c0ebbcfa925561364fa44eed5429916f69d62234ccee556f96774091d18af6",
+        verifying_key="026915bee07d2a4d4218f62b138ed1da3129567e633c93578d9fbba29a1a852967",
+    ),
+    "ed25519": VerifyingData(
+        header={"version": 0, "ciphersuite": "FROST-ED25519-SHA512-v1"},
+        verifying_shares={
+            "0000000000000000000000000000000000000000000000000000000000000001": "f71b6a3d148db6d6c8dcda46d25620ea029959b7321d93de381c89b9ead0eb4d",
+            "0000000000000000000000000000000000000000000000000000000000000002": "69b02cb070decdf156243d772e4f72cffcb3341caa796893e4229152af48a6d1",
+            "0000000000000000000000000000000000000000000000000000000000000003": "c6768aaffc14e9486ce8712da724ee0873e185d6c9d70311d9af4adbde9dc139"
+        },
+        verifying_key="0243320c99839580a4b1aff327be6d512df8fbc522b7e8ee21d620b3641fb147",
     ),
 }
 
@@ -58,8 +66,10 @@ def verify_deposit_tx(tx: bytes) -> bool:
     chain = chain.upper().decode()
 
     if chain == "BTC":
-        curve, keys = secp256k1_tr, KEYS["secp256k1_tr"]
+        curve, keys = secp256k1_evm, KEYS["secp256k1_evm"]
     elif chain in ("SEP",):
+        curve, keys = secp256k1_evm, KEYS["secp256k1_evm"]
+    elif chain in ("APT",):
         curve, keys = secp256k1_evm, KEYS["secp256k1_evm"]
     else:
         raise ValueError(f"invalid chain={chain}")
@@ -94,6 +104,6 @@ def verify_deposit_tx(tx: bytes) -> bool:
 
 
 if __name__ == "__main__":
-    tx = b'\x01dsep\x00\x01\xcdC\xb5\xa8L\xb3\x1a\xf9]\xa4\xaf\xb1\x15\x94\xe13\xccU\x02\x82\xb9\x9eX2\xecs\xa4\xd8S\x8fQQo\x8c\xbc\xf0\xb3B\xf6\xa9\x97\x87O\x8b\xf1C\n\xdeQ8\xe1Z\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01^\xf3\xc0\x06h\xb9\xc6M\x14_\xce\xb1\x8c\xf6+\xf7\x91\xd7\xaa\t1\xd3\x15\x9f\x95e\n\x04L\x00\x00\x1f8\x86<+Vg\xbc\xe9\xe1.\xbb\xbaA\x06\x97\x94\xe1@\x9b6\x95\xb4\xc1\xbf\xaf0\xa7\xc8\x97\xa3<")\xff\xda\x95\x08\x1aw\xe9 \xebI\xeb\xfa\x1a\xdd*0\xd7\xf0w\xd3\xd9PL\x99\xef\x01m\x1a\xcf\xcd\x0cs.\xef\xad\x89\\\x12\xae4N\xd0\xc1+\x83\xaa\xe8\xdb\x06#\xf7\x9c-\xf4\xd5\x0e\x02\x97\xce\xeb\xc8A"\xd7\xe5\xe1\xd0\xef\x99\x893\xcc\xd6\xee\xbfL\xc1=L\x08#{EH\x99)\xaf\x88\xcc\xaf\n\x01U\x1c'
+    tx = b'\x01dapt  \x00\x01\xb1.\xa2\xbd\x1b\x83\xa1\xdcH\x1e\x18pz\xd0\xcfP"P\x1fP@\xb0\xbcj\xb6XBX\x8e\xfd\x0e\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\xf5\xe1\x00\x08h\xbcEd\x14_\xce\xb1\x8c\xf6+\xf7\x91\xd7\xaa\t1\xd3\x15\x9f\x95e\n\x04\\\x00\x85A\x8c\x96\xc2:\x89\xbct\x06\xcca&U\x0f\xb9Pq\x1a\xbe8X\x99\x00\xdd]\xcaF\xc8cI5\xb6\xc1\xe0\xe3Oo\xc1\xa5\x7f\xf3\xa8c\x0f}\xbd{!\xd8\xe6W\x0e=\xc4\xf4\xd27/\x00\xbd01>\xfd\xb7\x10\xcb\x89+\x96z\xacj?`\x89\xd6\xe6\xbe\xf5\x8a\xe7\x93\x8byR\xb2\xfa@\x16\xa3\x01c?\x00RG\xcdh\xa3 \x14\x10\x9e\xed\xda\x96\x1d\xf8op\xd2\x83\x9b\x8a\xca\xbcW\xd0\x81\xf3]R\x11;\xf6\xd1\x1c'
     verified = verify_deposit_tx(tx)
     print(f"verified: {verified}")
