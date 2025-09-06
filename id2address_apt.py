@@ -26,13 +26,13 @@ def compute_apt_tweaked_pubkey(pubkey_package: PublicKeyPackage, salt: str) -> P
     return pubkey_package_tweaked
 
 
-def compute_apt_address(pubkey_package: PublicKeyPackage, salt: str) -> str:
+def compute_apt_address(salt: str) -> str:
     """Compute Aptos address from public key package and salt."""
-    sender = compute_apt_tweaked_pubkey(pubkey_package, salt)
+    sender = compute_apt_tweaked_pubkey(verifying_key, salt)
     sender_pub = ed25519.PublicKey.from_str(sender.verifying_key)
     tweaked_address = AccountAddress.from_key(sender_pub)
     return str(tweaked_address)
 
 if __name__ == "__main__":
-    address = compute_apt_address(verifying_key, "0x7314b5cb4E67450EF311a1a5e0c79f0D7424072e")
+    address = compute_apt_address("0x7314b5cb4E67450EF311a1a5e0c79f0D7424072e")
     print(address)
