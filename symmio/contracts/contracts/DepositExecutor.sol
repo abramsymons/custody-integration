@@ -14,10 +14,10 @@ contract DepositExecutor {
     mapping(bytes32 => bool) public usedDeposits;
     mapping(bytes32 => bool) public validPairs;
 
-    event DepositProcessed(string chain, address token, address user, uint256 amount);
-    event DepositIgnored(string chain, address token, address user, string reason);
+    event DepositProcessed(string chain, bytes32 token, address user, uint256 amount);
+    event DepositIgnored(string chain, bytes32 token, address user, string reason);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event PairUpdated(string chain, address token, bool valid);
+    event PairUpdated(string chain, bytes32 token, bool valid);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
@@ -41,13 +41,13 @@ contract DepositExecutor {
         owner = newOwner;
     }
 
-    function setPairValid(string calldata chain, address token, bool valid) external onlyOwner {
+    function setPairValid(string calldata chain, bytes32 token, bool valid) external onlyOwner {
         bytes32 key = keccak256(abi.encodePacked(chain, token));
         validPairs[key] = valid;
         emit PairUpdated(chain, token, valid);
     }
 
-    function isValidPair(string memory chain, address token) public view returns (bool) {
+    function isValidPair(string memory chain, bytes32 token) public view returns (bool) {
         return validPairs[keccak256(abi.encodePacked(chain, token))];
     }
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 contract DepositParser {
     struct Deposit {
         bytes32 txHash;
-        address tokenContract;
+        bytes32 tokenContract;
         uint256 amount;
         uint8 decimal;
         uint32 time;
@@ -25,10 +25,15 @@ contract DepositParser {
         uint8 version = uint8(txData[0]);
         bytes1 operation = txData[1];
         string memory chain = string(abi.encodePacked(txData[2], txData[3], txData[4]));
-        uint16 count = (uint16(uint8(txData[5])) << 8) | uint8(txData[6]);
+        uint8 txHashLen = uint8(txData[5]);
+        uint8 tokenContractLen = uint8(txData[6]);
+        require(txHashLen == 32, "Tx hash length should be 32");
+        require(tokenContractLen == 32, "Token contract len should be 32");
 
-        uint256 offset = 7;
-        uint256 depositSize = 111;
+        uint16 count = (uint16(uint8(txData[7])) << 8) | uint8(txData[8]);
+
+        uint256 offset = 9;
+        uint256 depositSize = 123;
         require(txData.length >= offset + count * depositSize, "Invalid deposit count or data");
 
         Deposit[] memory deposits = new Deposit[](count);
@@ -49,8 +54,8 @@ contract DepositParser {
         d.txHash = bytes32(data[pos:pos + 32]);
         pos += 32;
 
-        d.tokenContract = bytesToAddress(data[pos:pos + 20]);
-        pos += 20;
+        d.tokenContract = bytes32(data[pos:pos + 32]);
+        pos += 32;
 
         d.amount = bytesToUint(data[pos:pos + 32]);
         pos += 32;

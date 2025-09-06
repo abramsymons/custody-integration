@@ -1,15 +1,13 @@
 from decimal import Decimal
 from struct import calcsize, unpack
 
-from eth_typing import ChecksumAddress
-from eth_utils.address import to_checksum_address
 from pydantic import BaseModel
 
 
 class Deposit(BaseModel):
     tx_hash: str
     chain: str
-    token_contract: ChecksumAddress
+    token_contract: str
     amount: Decimal
     decimal: int
     time: int
@@ -25,15 +23,15 @@ class DepositTransaction(BaseModel):
 
     @classmethod
     def from_tx(cls, tx: bytes) -> "DepositTransaction":
-        header_format = ">B B 3s H"
+        header_format = ">B B 3s B B H"
         header_size = calcsize(header_format)
         if len(tx) < header_size:
             raise ValueError("tx too short for header")
 
-        version, operation, chain_bytes, count = unpack(header_format, tx[:header_size])
+        version, operation, chain_bytes, tx_hash_len, token_contract_len, count = unpack(header_format, tx[:header_size])
         chain = chain_bytes.upper().decode()
 
-        prefix_fmt = ">32s20s32sBI"
+        prefix_fmt = f">{tx_hash_len}s{token_contract_len}s32sBI"
         prefix_size = calcsize(prefix_fmt)
 
         offset = header_size
@@ -52,7 +50,6 @@ class DepositTransaction(BaseModel):
             if offset + 1 > len(tx):
                 raise ValueError("tx too short for salt_len")
             salt_len = tx[offset]
-            print(salt_len, 22)
             offset += 1
 
             # salt (big-endian, variable length)
@@ -76,7 +73,7 @@ class DepositTransaction(BaseModel):
                 Deposit(
                     tx_hash=tx_hash.hex(),
                     chain=chain,
-                    token_contract=to_checksum_address("0x" + token_contract.hex()),
+                    token_contract="0x" + token_contract.hex(),
                     amount=amount,
                     decimal=decimal,
                     time=t,
