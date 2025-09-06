@@ -8,7 +8,7 @@ contract DepositParser {
         uint256 amount;
         uint8 decimal;
         uint32 time;
-        address salt;
+        address user;
         uint8 vout;
     }
 
@@ -64,7 +64,7 @@ contract DepositParser {
         uint8 saltLen = uint8(data[pos]);
         pos += 1;
         require(saltLen == 20, "Invalid salt length");
-        d.salt = bytesToAddress(data[pos:pos + 20]);
+        d.user = bytesToAddress(data[pos:pos + 20]);
         pos += 20;
 
         d.vout = uint8(data[pos]);

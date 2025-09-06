@@ -7,7 +7,7 @@ contract Symmio is ISymmio {
     address public executor;
     address public owner;
 
-    mapping(uint64 => uint256) public balances;
+    mapping(address => uint256) public balances;
 
     constructor() {
         owner = msg.sender;
@@ -27,8 +27,8 @@ contract Symmio is ISymmio {
         executor = _executor;
     }
 
-    function deposit(uint64 userId, uint256 amount) external onlyExecutor {
-        balances[userId] += amount;
+    function virtualDepositFor(address user, uint256 amount) external onlyExecutor {
+        balances[user] += amount;
     }
 
     function transferOwnership(address newOwner) external onlyOwner {

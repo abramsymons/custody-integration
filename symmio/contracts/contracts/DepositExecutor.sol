@@ -14,8 +14,8 @@ contract DepositExecutor {
     mapping(bytes32 => bool) public usedDeposits;
     mapping(bytes32 => bool) public validPairs;
 
-    event DepositProcessed(string chain, address token, uint64 userId, uint256 amount);
-    event DepositIgnored(string chain, address token, uint64 userId, string reason);
+    event DepositProcessed(string chain, address token, address user, uint256 amount);
+    event DepositIgnored(string chain, address token, address user, string reason);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event PairUpdated(string chain, address token, bool valid);
 
@@ -63,19 +63,21 @@ contract DepositExecutor {
             DepositParser.Deposit memory d = txObj.deposits[i];
             // Validate token pair
             if (!isValidPair(txObj.chain, d.tokenContract)) {
-                emit DepositIgnored(txObj.chain, d.tokenContract, d.userId, "Invalid pair");
+                emit DepositIgnored(txObj.chain, d.tokenContract, d.user, "Invalid pair");
                 continue;
             }
 
             // Check replay protection
             bytes32 key = getDepositKey(txObj.chain, d.txHash, d.vout);
             if (usedDeposits[key]) {
-                emit DepositIgnored(txObj.chain, d.tokenContract, d.userId, "Already used");
+                emit DepositIgnored(txObj.chain, d.tokenContract, d.user, "Already used");
                 continue;
             }
             usedDeposits[key] = true;
-            symmio.deposit(d.userId, d.amount);
-            emit DepositProcessed(txObj.chain, d.tokenContract, d.userId, d.amount);
+            require(d.decimal <= 18, "Token decimals > 18");
+            uint256 amount18 = d.decimal == 18 ? d.amount : d.amount * 10 ** (18 - d.decimal);
+            symmio.virtualDepositFor(d.user, amount18);
+            emit DepositProcessed(txObj.chain, d.tokenContract, d.user, amount18);
         }
     }
 }
