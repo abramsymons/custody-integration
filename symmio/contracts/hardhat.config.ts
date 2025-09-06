@@ -11,7 +11,11 @@ const config: HardhatUserConfig = {
     sepolia: {
       url: "https://ethereum-sepolia-rpc.publicnode.com",
       accounts: [process.env.PRIVATE_KEY as string]
-    }
+    },
+    polygon: {
+      url: "https://polygon-bor-rpc.publicnode.com",
+      accounts: [process.env.PRIVATE_KEY as string],
+    },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,

@@ -47,6 +47,10 @@ contract DepositExecutor {
         emit PairUpdated(chain, token, valid);
     }
 
+    function setSymmio(address _symmio) external onlyOwner {
+        symmio = ISymmio(_symmio);
+    }
+
     function isValidPair(string memory chain, bytes32 token) public view returns (bool) {
         return validPairs[keccak256(abi.encodePacked(chain, token))];
     }
