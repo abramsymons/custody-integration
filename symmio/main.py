@@ -72,14 +72,15 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
             parsed_tx = DepositTransaction.from_tx(deposit_tx)
             print(parsed_tx)
             chain = parsed_tx.chain
-            contract_address = SUPPORTED_CHAINS[chain]["deposit_executor_address"]
-            executor = client(chain).eth.contract(
+            assert chain == "APT", f"Invalid deposit chain {chain}"
+            contract_address = SUPPORTED_CHAINS["SEP"]["deposit_executor_address"]
+            executor = client("SEP").eth.contract(
                 address=contract_address, abi=DEPOSIT_EXECUTOR_ABI
             )
 
             tx = executor.functions.executeDeposit(deposit_tx)
             gas_estimate = await tx.estimate_gas({"from": ACCOUNT_ADDRESS})
-            w3 = client(chain)
+            w3 = client("SEP")
             gas_price = await w3.eth.gas_price
             tx_dict = await tx.build_transaction(
                 {
