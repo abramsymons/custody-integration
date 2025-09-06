@@ -50,7 +50,7 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
 
 @router.get("/withdraw/id/last")
 def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
-    return {"chain": chain, "id": 0}
+    return {"chain": chain, "id": 1}
 
 
 class Withdraw(BaseModel):
@@ -58,7 +58,7 @@ class Withdraw(BaseModel):
     tokenContract: str
     amount: str
     destination: str
-    salt: int
+    salt: str
     t: int
     id: int
 
@@ -77,9 +77,17 @@ def get_withdraws(
             "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
             "amount": "2000000",
             "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
-            "salt": 1010,
+            "salt": hex(5 + 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061 + 1000),
             "t": 1753369254,
             "id": 0,
+        }, {
+            "chain": chain,
+            "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
+            "amount": "1500000",
+            "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
+            "salt": hex(5 + 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061 + 1000),
+            "t": 1753369255,
+            "id": 1,
         }
     ]
 
