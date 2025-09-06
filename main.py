@@ -1,4 +1,5 @@
 from fastapi import APIRouter, FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from parse_deposit import DepositTransaction
@@ -93,4 +94,11 @@ def get_withdraws(
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],          # allow all origins (dev only)
+    allow_credentials=False,      # must be False when allow_origins=["*"]
+    allow_methods=["*"],          # or ["GET","POST","PUT","DELETE","OPTIONS"]
+    allow_headers=["*"],          # or specific headers
+)
 app.include_router(router)
