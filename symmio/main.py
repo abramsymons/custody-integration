@@ -140,12 +140,9 @@ def get_users(
 ):
     try:
         with db() as con:  # uses the `db()` context manager from earlier
-            cur = con.execute(
-                "SELECT id, address FROM salts ORDER BY id LIMIT ? OFFSET ?",
-                (limit, offset),
-            )
+            cur = con.execute("SELECT id, address FROM salts ORDER BY id")
             rows = cur.fetchall()
-        return [User(id=row[0], salt=row[1]) for row in rows]
+        return [User(id=offset + i, salt=row[1]) for i, row in enumerate(rows[offset:offset+limit])]
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
