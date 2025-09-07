@@ -31,6 +31,12 @@ SUPPORTED_CHAINS = {
         "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
         "deposit_executor_address": "0x787FCe8e2Ee89C2015c02ae91D91bECC17e649A5",
         "chain_id": 137,
+    },
+    "BASE": {
+        "rpc": "https://base-rpc.publicnode.com",
+        "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
+        "deposit_executor_address": "0x787FCe8e2Ee89C2015c02ae91D91bECC17e649A5",
+        "chain_id": 8453,
     }
 }
 
@@ -156,14 +162,14 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
             print(parsed_tx)
             chain = parsed_tx.chain
             assert chain == "APT", f"Invalid deposit chain {chain}"
-            contract_address = SUPPORTED_CHAINS["POL"]["deposit_executor_address"]
-            executor = client("POL").eth.contract(
+            contract_address = SUPPORTED_CHAINS["BASE"]["deposit_executor_address"]
+            executor = client("BASE").eth.contract(
                 address=contract_address, abi=DEPOSIT_EXECUTOR_ABI
             )
 
             tx = executor.functions.executeDeposit(deposit_tx)
             gas_estimate = await tx.estimate_gas({"from": ACCOUNT_ADDRESS})
-            w3 = client("POL")
+            w3 = client("BASE")
             gas_price = await w3.eth.gas_price
             tx_dict = await tx.build_transaction(
                 {
