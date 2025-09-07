@@ -22,7 +22,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with:", deployer.address);
 
-  const schnorrPubKey = "0x0361a7241715d3d5d80b0c0cd3811765b1d2e38050b8a3f2d73e2488c93e4a0b64";
+  const schnorrPubKey = "0x026915bee07d2a4d4218f62b138ed1da3129567e633c93578d9fbba29a1a852967";
   const shieldAddress = "0x786bd69517Bc30eE2fC13FeDA8B1aE0e6feDbad6";
   const schnorrKeyBytes = arrayify(schnorrPubKey);
 

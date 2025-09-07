@@ -29,7 +29,7 @@ SUPPORTED_CHAINS = {
     "POL": {
         "rpc": "https://polygon-bor-rpc.publicnode.com",
         "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
-        "deposit_executor_address": "0x06f4FdB26B2Dc2AE256b441DB50aF5d556b9E0Ad",
+        "deposit_executor_address": "0x787FCe8e2Ee89C2015c02ae91D91bECC17e649A5",
         "chain_id": 137,
     }
 }
