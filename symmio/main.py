@@ -33,7 +33,7 @@ SUPPORTED_CHAINS = {
         "chain_id": 137,
     },
     "BASE": {
-        "rpc": "https://base-rpc.publicnode.com",
+        "rpc": "https://base.drpc.org",
         "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
         "deposit_executor_address": "0x9A51E128906bEcbA69201f1DA32f61b92eF8c6Cc",
         "chain_id": 8453,
