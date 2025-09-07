@@ -16,6 +16,10 @@ const config: HardhatUserConfig = {
       url: "https://polygon-bor-rpc.publicnode.com",
       accounts: [process.env.PRIVATE_KEY as string],
     },
+    base: {
+      url: "https://base-rpc.publicnode.com",
+      accounts: [process.env.PRIVATE_KEY as string],
+    },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,

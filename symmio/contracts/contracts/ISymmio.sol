@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 interface ISymmio {
-    function virtualDepositFor(
+    function virtualDepositAndAllocateFor(
         address user,
         uint256 amount
     ) external;

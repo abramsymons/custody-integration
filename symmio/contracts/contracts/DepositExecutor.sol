@@ -80,7 +80,7 @@ contract DepositExecutor {
             usedDeposits[key] = true;
             require(d.decimal <= 18, "Token decimals > 18");
             uint256 amount18 = d.decimal == 18 ? d.amount : d.amount * 10 ** (18 - d.decimal);
-            symmio.virtualDepositFor(d.user, amount18);
+            symmio.virtualDepositAndAllocateFor(d.user, amount18);
             emit DepositProcessed(txObj.chain, d.tokenContract, d.user, amount18);
         }
     }

@@ -27,7 +27,7 @@ contract Symmio is ISymmio {
         executor = _executor;
     }
 
-    function virtualDepositFor(address user, uint256 amount) external onlyExecutor {
+    function virtualDepositAndAllocateFor(address user, uint256 amount) external onlyExecutor {
         balances[user] += amount;
     }
 
