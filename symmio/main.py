@@ -1,6 +1,8 @@
 import sys
 import os
 import json
+import sqlite3
+from contextlib import contextmanager
 from fastapi import APIRouter, FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -24,6 +26,12 @@ SUPPORTED_CHAINS = {
         "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
         "deposit_executor_address": "0x1C6f721C0588338Ba7a80B20036F1D5627d46276",
         "chain_id": 11155111,
+    },
+    "POL": {
+        "rpc": "https://polygon-bor-rpc.publicnode.com",
+        "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
+        "deposit_executor_address": "0x06f4FdB26B2Dc2AE256b441DB50aF5d556b9E0Ad",
+        "chain_id": 137,
     }
 }
 
@@ -33,7 +41,78 @@ with open("WithdrawLogger.json") as f:
 with open("DepositExecutor.json") as f:
     DEPOSIT_EXECUTOR_ABI = json.load(f)
 
+
 router = APIRouter()
+
+DB_PATH = "relayer.db"
+
+def init_db() -> None:
+    """Create DB + salts table if missing."""
+    con = sqlite3.connect(DB_PATH)
+    try:
+        con.execute("PRAGMA journal_mode=WAL;")  # better concurrency for reads
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS salts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                address TEXT NOT NULL UNIQUE COLLATE NOCASE
+            );
+        """)
+        con.commit()
+    finally:
+        con.close()
+
+init_db()
+
+@contextmanager
+def db():
+    con = sqlite3.connect(DB_PATH, timeout=10)
+    try:
+        yield con
+        con.commit()
+    finally:
+        con.close()
+
+def insert_eth_addresses(addresses: list[str]) -> None:
+    """
+    Insert unique (case-insensitive) ETH addresses into salts.
+    Uses INSERT OR IGNORE so existing rows are left untouched.
+    """
+    if not addresses:
+        return
+    normalized = {a.lower() for a in addresses}  # dedupe before hitting the DB
+    with db() as con:
+        con.executemany(
+            "INSERT OR IGNORE INTO salts(address) VALUES (?)",
+            [(a,) for a in normalized],
+        )
+
+class AddressMapping(BaseModel):
+    apt: str
+    # in the future you could add: btc: str | None = None, sui: str | None = None, etc.
+
+class AddressesResponse(BaseModel):
+    addresses: dict[str, AddressMapping]
+
+
+@router.post("/vibe/deposit/addresses", response_model=AddressesResponse)
+def convert_eth_to_aptos(eth_addresses: list[str]):
+    if not eth_addresses:
+        raise HTTPException(status_code=400, detail="No Ethereum addresses provided.")
+
+    try:
+        result = {
+            addr: AddressMapping(apt=compute_apt_address(addr))
+            for addr in eth_addresses
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Conversion error: {e}")
+
+    try:
+        insert_eth_addresses(eth_addresses)
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+    return AddressesResponse(addresses=result)
 
 
 def client(chain: str) -> AsyncWeb3:
@@ -55,13 +134,16 @@ def get_users(
     offset: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
 ):
-    return [
-        {
-            "salt": hex(i + 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061 + 1000), # This can be any hex str specified by the app
-            "id": i,
-        }
-        for i in range(offset, limit + offset)
-    ]
+    try:
+        with db() as con:  # uses the `db()` context manager from earlier
+            cur = con.execute(
+                "SELECT id, address FROM salts ORDER BY id LIMIT ? OFFSET ?",
+                (limit, offset),
+            )
+            rows = cur.fetchall()
+        return [User(id=row[0], salt=row[1]) for row in rows]
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 
 @router.post("/deposit")
@@ -171,28 +253,6 @@ async def get_withdraws(
         for withdrawal in withdrawals
     ]
 
-class AddressMapping(BaseModel):
-    apt: str
-    # in the future you could add: btc: str | None = None, sui: str | None = None, etc.
-
-class AddressesResponse(BaseModel):
-    addresses: dict[str, AddressMapping]
-
-@router.post("/deposit/addresses", response_model=AddressesResponse)
-def convert_eth_to_aptos(eth_addresses: list[str]):
-    if not eth_addresses:
-        raise HTTPException(status_code=400, detail="No Ethereum addresses provided.")
-
-    result: dict[str, AddressMapping] = {}
-
-    try:
-        for addr in eth_addresses:
-            apt_addr = compute_apt_address(addr)
-            result[addr] = AddressMapping(apt=apt_addr)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Conversion error: {e}")
-
-    return AddressesResponse(addresses=result)
 
 app = FastAPI()
 app.add_middleware(
