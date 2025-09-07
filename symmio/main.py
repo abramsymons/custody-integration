@@ -124,7 +124,7 @@ async def get_last_user_id() -> dict[str, int]:
         with db() as con:  # uses the db() context manager from earlier
             cur = con.execute("SELECT COUNT(*) FROM salts")
             (count,) = cur.fetchone()
-        return {"id": int(count)}
+        return {"id": int(count) - 1}
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
