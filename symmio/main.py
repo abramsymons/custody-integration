@@ -17,7 +17,6 @@ from verify_deposit import verify_deposit_tx
 from id2address_apt import compute_apt_address
 
 FINALITY_BLOCKS = 1
-NUMBER_OF_USERS = 100
 PRIVATE_KEY = os.environ["PRIVATE_KEY"]
 ACCOUNT_ADDRESS = Account.from_key(PRIVATE_KEY).address
 SUPPORTED_CHAINS = {
@@ -121,8 +120,13 @@ def client(chain: str) -> AsyncWeb3:
 
 @router.get("/user/id/last")
 async def get_last_user_id() -> dict[str, int]:
-    return {"id": NUMBER_OF_USERS}
-
+    try:
+        with db() as con:  # uses the db() context manager from earlier
+            cur = con.execute("SELECT COUNT(*) FROM salts")
+            (count,) = cur.fetchone()
+        return {"id": int(count)}
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 class User(BaseModel):
     salt: str
