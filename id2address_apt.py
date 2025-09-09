@@ -34,5 +34,5 @@ def compute_apt_address(salt: str) -> str:
     return str(tweaked_address)
 
 if __name__ == "__main__":
-    address = compute_apt_address("0x7314b5cb4E67450EF311a1a5e0c79f0D7424072e")
+    address = compute_apt_address("0x")
     print(address)

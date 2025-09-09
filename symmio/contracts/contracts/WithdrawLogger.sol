@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 contract WithdrawLogger {
     struct WithdrawInfo {
         uint256 id;
-        address token;
+        bytes32 token;
         uint256 amount;
-        address destination;
+        bytes32 destination;
         address user;
     }
 
@@ -18,9 +18,9 @@ contract WithdrawLogger {
     event WithdrawalLogged(
         uint256 chainId,
         uint256 id,
-        address token,
+        bytes32 token,
         uint256 amount,
-        address destination,
+        bytes32 destination,
         address user
     );
 
@@ -38,9 +38,9 @@ contract WithdrawLogger {
     // Log a withdrawal — only callable by the owner
     function logWithdrawal(
         uint256 chainId,
-        address token,
+        bytes32 token,
         uint256 amount,
-        address destination,
+        bytes32 destination,
         address user
     ) external onlyOwner {
         uint256 newId = nextIdByChain[chainId];
