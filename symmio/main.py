@@ -41,7 +41,7 @@ DEPLOYMENT = DEPLOYMENTS["BASE"]
 w3 = AsyncWeb3(AsyncHTTPProvider(DEPLOYMENT["rpc"]))
 
 CHAIN2ID = {
-    "BASE": 2
+    "APT": 2
 }
 
 with open("WithdrawLogger.json") as f:
