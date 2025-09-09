@@ -19,25 +19,29 @@ from id2address_apt import compute_apt_address
 FINALITY_BLOCKS = 1
 PRIVATE_KEY = os.environ["PRIVATE_KEY"]
 ACCOUNT_ADDRESS = Account.from_key(PRIVATE_KEY).address
-SUPPORTED_CHAINS = {
+DEPLOYMENTS = {
     "SEP": {
         "rpc": "https://ethereum-sepolia-rpc.publicnode.com",
         "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
         "deposit_executor_address": "0x1C6f721C0588338Ba7a80B20036F1D5627d46276",
-        "chain_id": 11155111,
     },
     "POL": {
         "rpc": "https://polygon-bor-rpc.publicnode.com",
         "withdraw_logger_address": "0x2546042e663eF294bC6893D2615c867a28d38983",
         "deposit_executor_address": "0x787FCe8e2Ee89C2015c02ae91D91bECC17e649A5",
-        "chain_id": 137,
     },
     "BASE": {
         "rpc": "https://base.drpc.org",
         "withdraw_logger_address": "0xf893D81CC438dC44c25dD6F22a2422c26C626C9c",
         "deposit_executor_address": "0x9A51E128906bEcbA69201f1DA32f61b92eF8c6Cc",
-        "chain_id": 8453,
     }
+}
+
+DEPLOYMENT = DEPLOYMENTS["BASE"]
+w3 = AsyncWeb3(AsyncHTTPProvider(DEPLOYMENT["rpc"]))
+
+CHAIN2ID = {
+    "BASE": 2
 }
 
 with open("WithdrawLogger.json") as f:
@@ -120,10 +124,6 @@ def convert_eth_to_aptos(eth_addresses: list[str]):
     return AddressesResponse(addresses=result)
 
 
-def client(chain: str) -> AsyncWeb3:
-    return AsyncWeb3(AsyncHTTPProvider(SUPPORTED_CHAINS[chain]["rpc"]))
-
-
 @router.get("/user/id/last")
 async def get_last_user_id() -> dict[str, int]:
     try:
@@ -162,14 +162,13 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
             print(parsed_tx)
             chain = parsed_tx.chain
             assert chain == "APT", f"Invalid deposit chain {chain}"
-            contract_address = SUPPORTED_CHAINS["BASE"]["deposit_executor_address"]
-            executor = client("BASE").eth.contract(
+            contract_address = DEPLOYMENT["deposit_executor_address"]
+            executor = w3.eth.contract(
                 address=contract_address, abi=DEPOSIT_EXECUTOR_ABI
             )
 
             tx = executor.functions.executeDeposit(deposit_tx)
             gas_estimate = await tx.estimate_gas({"from": ACCOUNT_ADDRESS})
-            w3 = client("BASE")
             gas_price = await w3.eth.gas_price
             tx_dict = await tx.build_transaction(
                 {
@@ -197,15 +196,15 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
 
 @router.get("/withdraw/id/last")
 async def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
-    if chain not in SUPPORTED_CHAINS:
+    if chain not in CHAIN2ID:
         raise HTTPException(status_code=400, detail="Unsupported chain")
 
-    contract_address = SUPPORTED_CHAINS[chain]["withdraw_logger_address"]
-    withdrawal_chain_id = SUPPORTED_CHAINS[chain]["chain_id"]
-    contract = client(chain).eth.contract(
+    contract_address = DEPLOYMENT["withdraw_logger_address"]
+    withdrawal_chain_id = CHAIN2ID[chain]
+    contract = w3.eth.contract(
         address=contract_address, abi=WITHDRAW_LOGGER_ABI
     )
-    current_block = await client(chain).eth.block_number
+    current_block = await w3.eth.block_number
     block_number = current_block - FINALITY_BLOCKS
     count = await contract.functions.getWithdrawCount(withdrawal_chain_id).call(
         block_identifier=block_number
@@ -229,18 +228,18 @@ async def get_withdraws(
     offset: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
 ):
-    if chain not in SUPPORTED_CHAINS:
+    if chain not in CHAIN2ID:
         raise HTTPException(status_code=400, detail="Unsupported chain")
 
-    contract_address = SUPPORTED_CHAINS[chain]["withdraw_logger_address"]
-    withdrawal_chain_id = SUPPORTED_CHAINS[chain]["chain_id"]
-    contract = client(chain).eth.contract(
+    contract_address = DEPLOYMENT["withdraw_logger_address"]
+    withdrawal_chain_id = CHAIN2ID[chain]
+    contract = w3.eth.contract(
         address=contract_address, abi=WITHDRAW_LOGGER_ABI
     )
-    current_block = await client(chain).eth.block_number
+    current_block = await w3.eth.block_number
     block_number = current_block - FINALITY_BLOCKS
 
-    block = await client(chain).eth.get_block(block_number)
+    block = await w3.eth.get_block(block_number)
     timestamp = block["timestamp"]
 
     withdrawals = await contract.functions.getWithdrawals(
