@@ -250,9 +250,9 @@ async def get_withdraws(
         {
             "chain": chain,
             "id": withdrawal[0],
-            "tokenContract": withdrawal[1],
+            "tokenContract": "0x" + withdrawal[1].hex(),
             "amount": str(withdrawal[2]),
-            "destination": withdrawal[3],
+            "destination": "0x" + withdrawal[3].hex(),
             "salt": withdrawal[4],
             "t": timestamp,
         }
