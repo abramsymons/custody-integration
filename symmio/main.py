@@ -209,7 +209,7 @@ async def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
     count = await contract.functions.getWithdrawCount(withdrawal_chain_id).call(
         block_identifier=block_number
     )
-    return {"chain": chain, "id": count}
+    return {"chain": chain, "id": count - 1}
 
 
 class Withdraw(BaseModel):
