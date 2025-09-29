@@ -2,7 +2,7 @@ from struct import unpack
 from typing import Any
 
 from eth_account.messages import encode_defunct
-from frost_lib.curves import secp256k1_evm
+from frost_lib.curves import secp256k1_evm as curve
 from pydantic import BaseModel
 from web3 import Web3
 
@@ -25,35 +25,15 @@ class VerifyingData(BaseModel):
     verifying_key: str
 
 
-KEYS = {
-    "secp256k1_tr": VerifyingData(
-        header={"version": 0, "ciphersuite": "FROST-secp256k1-SHA256-TR-v1"},
-        verifying_shares={
-            "0000000000000000000000000000000000000000000000000000000000000001": "02759da1d09403158e43fb6427884f94d3d0f74bda020eb2c6323608a78eb357ee",
-            "0000000000000000000000000000000000000000000000000000000000000002": "02d88a09e81b662c86c52e474579497fc4f44e405ec369199514e670792057d599",
-            "0000000000000000000000000000000000000000000000000000000000000003": "03f2ef0088e6fc5d21ef18d4d212163cdce6525638123e004609b6feaf18981446",
-        },
-        verifying_key="0367e79f1483c900ff4eb46cdf31f263c4b34be7594e52d4f2a84ef7328324c556",
-    ),
-    "secp256k1_evm": VerifyingData(
-        header={"version": 0, "ciphersuite": "FROST-secp256k1-SHA256-v1"},
-        verifying_shares={
-            "0000000000000000000000000000000000000000000000000000000000000001": "02e2a72e964c746d72538a42a712b240ad680f0e8d1d240a4c68a7b054cfc1a085",
-            "0000000000000000000000000000000000000000000000000000000000000002": "023f3a1322b880be0f073d30a5df1b0edc9518e64762320534c1e51bb743470876",
-            "0000000000000000000000000000000000000000000000000000000000000003": "03a4b318d6605669cf5bd297dfe2d6dc86ac42180db6dd161a6568b17fc6e4542d",
-        },
-        verifying_key="026915bee07d2a4d4218f62b138ed1da3129567e633c93578d9fbba29a1a852967",
-    ),
-    "ed25519": VerifyingData(
-        header={"version": 0, "ciphersuite": "FROST-ED25519-SHA512-v1"},
-        verifying_shares={
-            "0000000000000000000000000000000000000000000000000000000000000001": "f71b6a3d148db6d6c8dcda46d25620ea029959b7321d93de381c89b9ead0eb4d",
-            "0000000000000000000000000000000000000000000000000000000000000002": "69b02cb070decdf156243d772e4f72cffcb3341caa796893e4229152af48a6d1",
-            "0000000000000000000000000000000000000000000000000000000000000003": "c6768aaffc14e9486ce8712da724ee0873e185d6c9d70311d9af4adbde9dc139",
-        },
-        verifying_key="0243320c99839580a4b1aff327be6d512df8fbc522b7e8ee21d620b3641fb147",
-    ),
-}
+KEY = VerifyingData(
+    header={"version": 0, "ciphersuite": "FROST-secp256k1-SHA256-v1"},
+    verifying_shares={
+        "0000000000000000000000000000000000000000000000000000000000000001": "02e2a72e964c746d72538a42a712b240ad680f0e8d1d240a4c68a7b054cfc1a085",
+        "0000000000000000000000000000000000000000000000000000000000000002": "023f3a1322b880be0f073d30a5df1b0edc9518e64762320534c1e51bb743470876",
+        "0000000000000000000000000000000000000000000000000000000000000003": "03a4b318d6605669cf5bd297dfe2d6dc86ac42180db6dd161a6568b17fc6e4542d",
+    },
+    verifying_key="026915bee07d2a4d4218f62b138ed1da3129567e633c93578d9fbba29a1a852967",
+)
 
 deposit_shield_address = "0x786bd69517Bc30eE2fC13FeDA8B1aE0e6feDbad6"
 
@@ -66,15 +46,6 @@ def verify_deposit_tx(tx: bytes) -> bool:
     chain = msg[2:5]
     chain = chain.upper().decode()
 
-    if chain == "BTC":
-        curve, keys = secp256k1_evm, KEYS["secp256k1_evm"]
-    elif chain in ("SEP",):
-        curve, keys = secp256k1_evm, KEYS["secp256k1_evm"]
-    elif chain in ("APT",):
-        curve, keys = secp256k1_evm, KEYS["secp256k1_evm"]
-    else:
-        raise ValueError(f"invalid chain={chain}")
-
     if curve is None:
         raise DepositChainNotFound()
 
@@ -83,7 +54,7 @@ def verify_deposit_tx(tx: bytes) -> bool:
         frost_verified = curve.verify_group_signature(
             frost_sig.hex(),
             msg,
-            keys,
+            KEY,
         )
     except ValueError as e:
         print(f"FROST signature verification failed: {e}")
