@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -50,9 +52,36 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
     return {"success": True}
 
 
+WITHDRAWALS = [
+    {
+        "chain": "SEP",
+        "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
+        "amount": "2000000",
+        "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
+        "user_id": 5 + 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061 + 1000,
+        "t": 1753369254,
+        "id": 0,
+    },
+    {
+        "chain": "SEP",
+        "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
+        "amount": "1500000",
+        "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
+        "user_id": 5 + 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061 + 1000,
+        "t": 1753369255,
+        "id": 1,
+    },
+]
+
+WITHDRAWALS_MAP = {withdrawal["id"]: withdrawal for withdrawal in WITHDRAWALS}
+
+
 @router.get("/withdraw/id/last")
 def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
-    return {"chain": chain, "id": 1}
+    if chain != "SEP":
+        raise HTTPException(status_code=400, detail="Invalid chain.")
+
+    return {"chain": chain, "id": max(WITHDRAWALS_MAP.keys())}
 
 
 class Withdraw(BaseModel):
@@ -72,27 +101,34 @@ def get_withdraws(
     limit: int = Query(10, ge=1, le=100),
 ):
     if chain != "SEP":
-        return []
-    return [
-        {
-            "chain": chain,
-            "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
-            "amount": "2000000",
-            "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
-            "user_id": 5 + 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061 + 1000,
-            "t": 1753369254,
-            "id": 0,
-        },
-        {
-            "chain": chain,
-            "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
-            "amount": "1500000",
-            "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
-            "user_id": 5 + 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061 + 1000,
-            "t": 1753369255,
-            "id": 1,
-        },
-    ]
+        raise HTTPException(status_code=400, detail="Invalid chain.")
+
+    return WITHDRAWALS
+
+
+@router.get("/withdraw/id", response_model=list[Withdraw])
+def get_withdraw_by_ids(
+    chain: str = Query(...),
+    ids: str = Query(..., description="JSON.dumps of list of ids"),
+):
+    if chain != "SEP":
+        raise HTTPException(status_code=400, detail="Invalid chain.")
+
+    try:
+        id_list: list[int] = json.loads(ids)
+        if not isinstance(id_list, list) or not all(
+            isinstance(i, int) for i in id_list
+        ):
+            raise ValueError("ids must be a JSON list of integers.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid ids format: {e}")
+
+    withdrawals = []
+    for wid in id_list:
+        if wid in WITHDRAWALS_MAP:
+            withdrawals.append(WITHDRAWALS_MAP[wid])
+
+    return withdrawals
 
 
 class AddressMapping(BaseModel):
