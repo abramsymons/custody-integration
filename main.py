@@ -1,4 +1,4 @@
-from fastapi import APIRouter, FastAPI, Query
+from fastapi import APIRouter, FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -28,7 +28,9 @@ def get_users(
 ):
     return [
         {
-            "salt": hex(i + 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061 + 1000), # This can be any hex str specified by the app
+            "salt": hex(
+                i + 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061 + 1000
+            ),  # This can be any hex str specified by the app
             "id": i,
         }
         for i in range(offset, limit + offset)
@@ -79,26 +81,30 @@ def get_withdraws(
             "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
             "amount": "2000000",
             "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
-            "salt": hex(5 + 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061 + 1000),
+            "salt": hex(5 + 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061 + 1000),
             "t": 1753369254,
             "id": 0,
-        }, {
+        },
+        {
             "chain": chain,
             "tokenContract": "0x6f8cbCf0b342f6a997874F8bf1430ADE5138e15a",
             "amount": "1500000",
             "destination": "0x7314b5cb4e67450ef311a1a5e0c79f0d7424072e",
-            "salt": hex(5 + 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061 + 1000),
+            "salt": hex(5 + 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061 + 1000),
             "t": 1753369255,
             "id": 1,
-        }
+        },
     ]
+
 
 class AddressMapping(BaseModel):
     apt: str
     # in the future you could add: btc: str | None = None, sui: str | None = None, etc.
 
+
 class AddressesResponse(BaseModel):
     addresses: dict[str, AddressMapping]
+
 
 @router.post("/deposit/addresses", response_model=AddressesResponse)
 def convert_eth_to_aptos(eth_addresses: list[str]):
@@ -116,12 +122,13 @@ def convert_eth_to_aptos(eth_addresses: list[str]):
 
     return AddressesResponse(addresses=result)
 
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # allow all origins (dev only)
-    allow_credentials=False,      # must be False when allow_origins=["*"]
-    allow_methods=["*"],          # or ["GET","POST","PUT","DELETE","OPTIONS"]
-    allow_headers=["*"],          # or specific headers
+    allow_origins=["*"],  # allow all origins (dev only)
+    allow_credentials=False,  # must be False when allow_origins=["*"]
+    allow_methods=["*"],  # or ["GET","POST","PUT","DELETE","OPTIONS"]
+    allow_headers=["*"],  # or specific headers
 )
 app.include_router(router)

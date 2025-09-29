@@ -12,7 +12,7 @@ from eth_account import Account
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from parse_deposit import DepositTransaction, Deposit
+from parse_deposit import DepositTransaction
 from verify_deposit import verify_deposit_tx
 from id2address_apt import compute_apt_address
 
@@ -34,15 +34,13 @@ DEPLOYMENTS = {
         "rpc": "https://base.drpc.org",
         "withdraw_logger_address": "0xf893D81CC438dC44c25dD6F22a2422c26C626C9c",
         "deposit_executor_address": "0x9A51E128906bEcbA69201f1DA32f61b92eF8c6Cc",
-    }
+    },
 }
 
 DEPLOYMENT = DEPLOYMENTS["BASE"]
 w3 = AsyncWeb3(AsyncHTTPProvider(DEPLOYMENT["rpc"]))
 
-CHAIN2ID = {
-    "APT": 2
-}
+CHAIN2ID = {"APT": 2}
 
 with open("WithdrawLogger.json") as f:
     WITHDRAW_LOGGER_ABI = json.load(f)
@@ -54,6 +52,7 @@ with open("DepositExecutor.json") as f:
 router = APIRouter()
 
 DB_PATH = "relayer.db"
+
 
 def init_db() -> None:
     """Create DB + salts table if missing."""
@@ -70,7 +69,9 @@ def init_db() -> None:
     finally:
         con.close()
 
+
 init_db()
+
 
 @contextmanager
 def db():
@@ -80,6 +81,7 @@ def db():
         con.commit()
     finally:
         con.close()
+
 
 def insert_eth_addresses(addresses: list[str]) -> None:
     """
@@ -95,9 +97,11 @@ def insert_eth_addresses(addresses: list[str]) -> None:
             [(a,) for a in normalized],
         )
 
+
 class AddressMapping(BaseModel):
     apt: str
     # in the future you could add: btc: str | None = None, sui: str | None = None, etc.
+
 
 class AddressesResponse(BaseModel):
     addresses: dict[str, AddressMapping]
@@ -134,6 +138,7 @@ async def get_last_user_id() -> dict[str, int]:
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
+
 class User(BaseModel):
     salt: str
     id: int
@@ -148,7 +153,10 @@ def get_users(
         with db() as con:  # uses the `db()` context manager from earlier
             cur = con.execute("SELECT id, address FROM salts ORDER BY id")
             rows = cur.fetchall()
-        return [User(id=offset + i, salt=row[1]) for i, row in enumerate(rows[offset:offset+limit])]
+        return [
+            User(id=offset + i, salt=row[1])
+            for i, row in enumerate(rows[offset : offset + limit])
+        ]
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
@@ -201,9 +209,7 @@ async def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
 
     contract_address = DEPLOYMENT["withdraw_logger_address"]
     withdrawal_chain_id = CHAIN2ID[chain]
-    contract = w3.eth.contract(
-        address=contract_address, abi=WITHDRAW_LOGGER_ABI
-    )
+    contract = w3.eth.contract(address=contract_address, abi=WITHDRAW_LOGGER_ABI)
     current_block = await w3.eth.block_number
     block_number = current_block - FINALITY_BLOCKS
     count = await contract.functions.getWithdrawCount(withdrawal_chain_id).call(
@@ -233,9 +239,7 @@ async def get_withdraws(
 
     contract_address = DEPLOYMENT["withdraw_logger_address"]
     withdrawal_chain_id = CHAIN2ID[chain]
-    contract = w3.eth.contract(
-        address=contract_address, abi=WITHDRAW_LOGGER_ABI
-    )
+    contract = w3.eth.contract(address=contract_address, abi=WITHDRAW_LOGGER_ABI)
     current_block = await w3.eth.block_number
     block_number = current_block - FINALITY_BLOCKS
 
@@ -263,9 +267,9 @@ async def get_withdraws(
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # allow all origins (dev only)
-    allow_credentials=False,      # must be False when allow_origins=["*"]
-    allow_methods=["*"],          # or ["GET","POST","PUT","DELETE","OPTIONS"]
-    allow_headers=["*"],          # or specific headers
+    allow_origins=["*"],  # allow all origins (dev only)
+    allow_credentials=False,  # must be False when allow_origins=["*"]
+    allow_methods=["*"],  # or ["GET","POST","PUT","DELETE","OPTIONS"]
+    allow_headers=["*"],  # or specific headers
 )
 app.include_router(router)

@@ -34,6 +34,6 @@ taproot_verifying_key = PublicKey(
     "03fba30c7f6d8560c86845c74e38f64b8c8dfb2f95c46333b11890185d069db91b"
 )
 
-for salt in (1, 123456789, 0x5fCeb18CF62bF791d7Aa0931D3159f95650A0061):
+for salt in (1, 123456789, 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061):
     taproot_address = get_taproot_address(taproot_verifying_key, salt)
     print(f"salt: {salt}, btc address: {taproot_address}")
