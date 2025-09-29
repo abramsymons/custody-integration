@@ -33,7 +33,7 @@ class DepositTransaction(BaseModel):
         )
         chain = chain_bytes.upper().decode()
 
-        prefix_fmt = f">{tx_hash_len}s{token_contract_len}s32sBI"
+        prefix_fmt = f">{tx_hash_len}s {token_contract_len}s 32s B I"
         prefix_size = calcsize(prefix_fmt)
 
         offset = header_size

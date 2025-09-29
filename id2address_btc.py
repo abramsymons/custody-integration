@@ -2,10 +2,12 @@ import hashlib
 
 from bitcoinutils.keys import PublicKey
 from bitcoinutils.utils import tweak_taproot_pubkey
+from utils import compute_tweak_by, encode_salt
 
 
 def get_taproot_address(master_public: PublicKey, salt: int) -> str:
-    tweak_int = calculate_tweak(master_public, salt)
+    tweak_by = compute_tweak_by(encode_salt(salt))
+    tweak_int = calculate_tweak(master_public, tweak_by)
     tweak_and_odd = tweak_taproot_pubkey(master_public.key.to_string(), tweak_int)
     pubkey = tweak_and_odd[0][:32]
     is_odd = tweak_and_odd[1]
@@ -17,10 +19,9 @@ def get_taproot_address(master_public: PublicKey, salt: int) -> str:
     return taproot_address.to_string()
 
 
-def calculate_tweak(pubkey: PublicKey, salt: int) -> int:
+def calculate_tweak(pubkey: PublicKey, tweak_by: bytes) -> int:
     key_x = pubkey.to_bytes()[:32]
-    salt_bytes = salt.to_bytes(32, byteorder="big")
-    tweak = tagged_hash(key_x + salt_bytes, "TapTweak")
+    tweak = tagged_hash(key_x + tweak_by, "TapTweak")
     tweak_int = int.from_bytes(tweak, byteorder="big")
     return tweak_int
 
@@ -31,7 +32,7 @@ def tagged_hash(data: bytes, tag: str) -> bytes:
 
 
 taproot_verifying_key = PublicKey(
-    "03fba30c7f6d8560c86845c74e38f64b8c8dfb2f95c46333b11890185d069db91b"
+    "0367e79f1483c900ff4eb46cdf31f263c4b34be7594e52d4f2a84ef7328324c556"
 )
 
 for salt in (1, 123456789, 0x5FCEB18CF62BF791D7AA0931D3159F95650A0061):

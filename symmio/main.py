@@ -140,7 +140,7 @@ async def get_last_user_id() -> dict[str, int]:
 
 
 class User(BaseModel):
-    salt: str
+    salt: int
     id: int
 
 
@@ -154,7 +154,7 @@ def get_users(
             cur = con.execute("SELECT id, address FROM salts ORDER BY id")
             rows = cur.fetchall()
         return [
-            User(id=offset + i, salt=row[1])
+            User(id=offset + i, salt=int(row[1], 0))
             for i, row in enumerate(rows[offset : offset + limit])
         ]
     except sqlite3.Error as e:
@@ -223,7 +223,7 @@ class Withdraw(BaseModel):
     tokenContract: str
     amount: str
     destination: str
-    salt: str
+    user_id: int
     t: int
     id: int
 
@@ -257,7 +257,7 @@ async def get_withdraws(
             "tokenContract": "0x" + withdrawal[1].hex(),
             "amount": str(withdrawal[2]),
             "destination": "0x" + withdrawal[3].hex(),
-            "salt": withdrawal[4],
+            "user_id": int.from_bytes(withdrawal[4], "big"),
             "t": timestamp,
         }
         for withdrawal in withdrawals
