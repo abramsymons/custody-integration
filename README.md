@@ -27,18 +27,15 @@ On EVM-based chains, addresses are derived from:
 - The **factory's bytecode hash**
 - The **salt** — a unique integer per user defined by your app
 
-### Get Last User ID
+### Get the Count of Users
 
-The custody service first queries this route to find out up to which user ID it should fetch salts:
+The custody service first queries this route to find out the count of users:
 
 ```python
-@router.get("/user/id/last")
-async def get_latest_user_id() -> dict[str, int]:
-    return {"id": 10}
+@router.get("/user/count")
+async def get_user_count() -> dict[str, int]:
+    return {"count": 10}
 ```
-
-- Returns the latest (highest) user ID to monitor.
-- The custody service will query salts from your app for all users from 0 to id.
 
 ### Get Users Salts
 
@@ -106,14 +103,14 @@ Once a transaction is verified, your application must parse its binary payload t
 
 The custody service queries your application for pending withdrawals to sign and submit on-chain. Your app must implement two endpoints:
 
-### Get Last Withdrawal ID
+### Get the Count of Withdrawals
 
-Returns the last processed withdrawal ID for a given chain.
+Returns the count of withdrawals for a given chain.
 
 ```python
-@router.get("/withdraw/id/last")
+@router.get("/withdraw/count")
 def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
-    return {"chain": chain, "id": 0}
+    return {"chain": chain, "count": 10}
 ```
 
 ### Get Pending Withdrawals
@@ -126,7 +123,7 @@ class Withdraw(BaseModel):
     tokenContract: str
     amount: str
     destination: str
-    salt: int
+    user_id: int
     t: int
     id: int
 
