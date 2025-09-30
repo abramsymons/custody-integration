@@ -128,13 +128,13 @@ def convert_eth_to_aptos(eth_addresses: list[str]):
     return AddressesResponse(addresses=result)
 
 
-@router.get("/user/id/last")
+@router.get("/user/count")
 async def get_last_user_id() -> dict[str, int]:
     try:
         with db() as con:  # uses the db() context manager from earlier
             cur = con.execute("SELECT COUNT(*) FROM salts")
             (count,) = cur.fetchone()
-        return {"id": int(count) - 1}
+        return {"count": int(count)}
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
@@ -202,7 +202,7 @@ async def deposit(deposit_txs: list[str]) -> dict[str, bool]:
     return {"success": True}
 
 
-@router.get("/withdraw/id/last")
+@router.get("/withdraw/count")
 async def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
     if chain not in CHAIN2ID:
         raise HTTPException(status_code=400, detail="Unsupported chain")
@@ -215,7 +215,7 @@ async def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
     count = await contract.functions.getWithdrawCount(withdrawal_chain_id).call(
         block_identifier=block_number
     )
-    return {"chain": chain, "id": count - 1}
+    return {"chain": chain, "count": count}
 
 
 class Withdraw(BaseModel):

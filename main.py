@@ -13,9 +13,9 @@ NUMBER_OF_USERS = 100
 router = APIRouter()
 
 
-@router.get("/user/id/last")
-async def get_last_user_id() -> dict[str, int]:
-    return {"id": NUMBER_OF_USERS}
+@router.get("/user/count")
+async def get_user_count() -> dict[str, int]:
+    return {"count": NUMBER_OF_USERS}
 
 
 class User(BaseModel):
@@ -76,12 +76,12 @@ WITHDRAWALS = [
 WITHDRAWALS_MAP = {withdrawal["id"]: withdrawal for withdrawal in WITHDRAWALS}
 
 
-@router.get("/withdraw/id/last")
-def get_last_withdraw_id(chain: str = Query(...)) -> dict[str, int | str]:
+@router.get("/withdraw/count")
+def get_withdraw_count(chain: str = Query(...)) -> dict[str, int | str]:
     if chain != "SEP":
         raise HTTPException(status_code=400, detail="Invalid chain.")
 
-    return {"chain": chain, "id": max(WITHDRAWALS_MAP.keys())}
+    return {"chain": chain, "count": len(WITHDRAWALS)}
 
 
 class Withdraw(BaseModel):
